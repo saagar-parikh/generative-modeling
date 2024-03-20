@@ -123,7 +123,7 @@ class Decoder(nn.Module):
             nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1),
         ]
         self.deconvs = nn.Sequential(*deconvs_list)
-        self.fc = None
+        self.fc = nn.Linear(self.latent_dim, self.base_size)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################

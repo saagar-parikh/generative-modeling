@@ -293,7 +293,10 @@ class Generator(torch.jit.ScriptModule):
         # been passed in. Don't forget to re-shape the output of the dense
         # layer into an image with the appropriate size!
         ##################################################################
-        pass
+        x = self.dense(z)
+        x = x.view(-1, 128, self.starting_image_size, self.starting_image_size)
+        x = self.layers(x)
+        return x
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################

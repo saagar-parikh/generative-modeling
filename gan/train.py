@@ -28,8 +28,8 @@ def get_optimizers_and_schedulers(gen, disc):
     # The learning rate for the generator should be decayed to 0 over
     # 100K iterations.
     ##################################################################
-    scheduler_discriminator = None
-    scheduler_generator = None
+    scheduler_discriminator = torch.optim.lr_scheduler.LambdaLR(optim_discriminator, lambda x: max(0, 1 - x / 500_000))
+    scheduler_generator = torch.optim.lr_scheduler.LambdaLR(optim_generator, lambda x: max(0, 1 - x / 100_000))
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################
@@ -105,8 +105,10 @@ def train_model(
                 # 2. Compute discriminator output on the train batch.
                 # 3. Compute the discriminator output on the generated data.
                 ##################################################################
-                discrim_real = None
-                discrim_fake = None
+                discrim_real = disc(train_batch)
+                z = torch.randn(batch_size, 128).cuda()
+                fake_batch = gen.forward_given_samples(z)
+                discrim_fake = disc(fake_batch)
                 ##################################################################
                 #                          END OF YOUR CODE                      #
                 ##################################################################
@@ -136,8 +138,8 @@ def train_model(
                     # TODO 1.2: Compute generator and discriminator output on
                     # generated data.
                     ###################################################################
-                    fake_batch = None
-                    discrim_fake = None
+                    fake_batch = gen.forward_given_samples(z)
+                    discrim_fake = disc(fake_batch)
                     ##################################################################
                     #                          END OF YOUR CODE                      #
                     ##################################################################
@@ -156,7 +158,7 @@ def train_model(
                         # TODO 1.2: Generate samples using the generator.
                         # Make sure they lie in the range [0, 1]!
                         ##################################################################
-                        generated_samples = None
+                        generated_samples = gen.forward_given_samples(z).clamp(0, 1)
                         ##################################################################
                         #                          END OF YOUR CODE                      #
                         ##################################################################

@@ -27,8 +27,10 @@ class UpSampleConv2D(torch.jit.ScriptModule):
         # (batch, channel, height*upscale_factor, width*upscale_factor)
         # 3. Apply convolution and return output
         ##################################################################
-        x = x.repeat_interleave(int(self.upscale_factor) ** 2, dim=1)
+        x = x.repeat_interleave(int(self.upscale_factor ** 2), dim=1)
         x = F.pixel_shuffle(x, self.upscale_factor)
+        x = self.conv(x)
+        return x
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -56,7 +58,7 @@ class DownSampleConv2D(torch.jit.ScriptModule):
         # and return the output
         ##################################################################
         x = F.pixel_unshuffle(x, self.downscale_ratio)
-        x = x.view(int(self.downscale_ratio) ** 2, x.size(0), -1, x.size(2), x.size(3))
+        x = x.view(int(self.downscale_ratio ** 2), x.size(0), -1, x.size(2), x.size(3))
         x = x.mean(dim=0)
         x = self.conv(x)
         return x
@@ -94,10 +96,10 @@ class ResBlockUp(torch.jit.ScriptModule):
             nn.Conv2d(input_channels, n_filters, kernel_size=kernel_size, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(n_filters, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(),
-            UpSampleConv2D(n_filters, kernel_size=kernel_size, n_filters=n_filters, padding=1)
+            UpSampleConv2D(input_channels=n_filters, kernel_size=kernel_size, n_filters=n_filters, padding=1)
         ]
         self.layers = nn.Sequential(*layers_list)
-        self.upsample_residual = UpSampleConv2D(input_channels, kernel_size=1, n_filters=n_filters)
+        self.upsample_residual = UpSampleConv2D(input_channels=input_channels, kernel_size=1, n_filters=n_filters)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -307,6 +309,7 @@ class Generator(torch.jit.ScriptModule):
         # TODO 1.1: Generate n_samples latents and forward through the
         # network.
         ##################################################################
+        z = torch.randn(n_samples, 128)
         x = self.dense(z)
         x = x.view(-1, 128, self.starting_image_size, self.starting_image_size)
         x = self.layers(x)

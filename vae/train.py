@@ -21,7 +21,7 @@ def ae_loss(model, x):
     x_recon = model.decoder(model.encoder(x))
     pixel_mse = F.mse_loss(x_recon, x, reduction='none')
 
-    image_mse = torch.mean(pixel_mse.view(pixel_mse.size(0), -1), dim=1)
+    image_mse = torch.sum(pixel_mse.view(x_recon.size(0), -1), dim=1)
 
     loss = torch.mean(image_mse)
     ##################################################################
@@ -47,7 +47,7 @@ def vae_loss(model, x, beta = 1):
     recon_loss = None
     kl_loss = None
 
-    # Encoder
+    # Encoder + Decoder
     mu, logstd = model.encoder(x)
     std = torch.exp(logstd)
     z = mu + std * torch.randn_like(std)
@@ -55,11 +55,14 @@ def vae_loss(model, x, beta = 1):
 
     # Recon Loss
     pixel_mse = F.mse_loss(x_recon, x, reduction='none')
-    image_mse = torch.mean(pixel_mse.view(pixel_mse.size(0), -1), dim=1)
+    image_mse = torch.sum(pixel_mse.view(pixel_mse.size(0), -1), dim=1)
     recon_loss = torch.mean(image_mse)
 
     # KL Loss
     kl_loss = torch.mean(-0.5 * torch.sum(1 + 2 * logstd - mu.pow(2) - std.pow(2), dim=1))
+
+    # Total Loss
+    total_loss = recon_loss + beta * kl_loss
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################
@@ -77,7 +80,9 @@ def linear_beta_scheduler(max_epochs=None, target_val = 1):
     # linearly from 0 at epoch 0 to target_val at epoch max_epochs.
     ##################################################################
     def _helper(epoch):
-        return min(target_val, (epoch / max_epochs))
+        # return target_val * (epoch / max_epochs)
+        return min(target_val, target_val*(epoch / max_epochs))
+        # pass
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################

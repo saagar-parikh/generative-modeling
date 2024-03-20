@@ -67,8 +67,8 @@ class VAEEncoder(Encoder):
         # TODO 2.4: Fill in self.fc, such that output dimension is
         # 2*self.latent_dim
         ##################################################################
-        # conv2linear_shape = self.get_conv2linear_shape(input_shape)
-        # self.fc = nn.Linear(conv2linear_shape, 2*self.latent_dim)
+        conv2linear_shape = self.get_conv2linear_shape(input_shape)
+        self.fc = nn.Linear(conv2linear_shape, 2*self.latent_dim)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -82,7 +82,7 @@ class VAEEncoder(Encoder):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         mu = x[:, :self.latent_dim]
-        log_std = mu = x[:, self.latent_dim:]
+        log_std = x[:, self.latent_dim:]
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################

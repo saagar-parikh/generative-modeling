@@ -24,8 +24,20 @@ class Encoder(nn.Module):
         # TODO 2.1: Set up the network layers. First create the self.convs.
         # Then create self.fc with output dimension == self.latent_dim
         ##################################################################
-        self.convs = None
-        self.fc = None
+        convs_list = [
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
+        ]
+        self.convs = nn.Sequential(*convs_list)
+        conv2linear_shape = self.get_conv2linear_shape(input_shape)
+        self.fc = nn.Linear(conv2linear_shape, self.latent_dim)
+
+
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -35,10 +47,18 @@ class Encoder(nn.Module):
         # TODO 2.1: Forward pass through the network, output should be
         # of dimension == self.latent_dim
         ##################################################################
-        pass
+        x = self.convs(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
+
+    def get_conv2linear_shape(self, input_shape):
+        x = torch.ones(1, *input_shape)
+        x = self.convs(x)
+        return x.size()[1] * x.size()[2] * x.size()[3] 
 
 class VAEEncoder(Encoder):
     def __init__(self, input_shape, latent_dim):
@@ -47,7 +67,8 @@ class VAEEncoder(Encoder):
         # TODO 2.4: Fill in self.fc, such that output dimension is
         # 2*self.latent_dim
         ##################################################################
-        self.fc = None
+        # conv2linear_shape = self.get_conv2linear_shape(input_shape)
+        # self.fc = nn.Linear(conv2linear_shape, 2*self.latent_dim)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -57,8 +78,11 @@ class VAEEncoder(Encoder):
         # TODO 2.1: Forward pass through the network, should return a
         # tuple of 2 tensors, mu and log_std
         ##################################################################
-        mu = None
-        log_std = None
+        x = self.convs(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        mu = x[:, :self.latent_dim]
+        log_std = mu = x[:, self.latent_dim:]
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -87,8 +111,18 @@ class Decoder(nn.Module):
         # TODO 2.1: Set up the network layers. First, compute
         # self.base_size, then create the self.fc and self.deconvs.
         ##################################################################
-        self.base_size = 0
-        self.deconvs = None
+        self.base_size = self.get_base_size(output_shape)
+        deconvs_list = [
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1),
+        ]
+        self.deconvs = nn.Sequential(*deconvs_list)
         self.fc = None
         ##################################################################
         #                          END OF YOUR CODE                      #
@@ -100,10 +134,17 @@ class Decoder(nn.Module):
         # TODO 2.1: Forward pass through the network, first through
         # self.fc, then self.deconvs.
         ##################################################################
-        pass
+        x = self.fc(z)
+        x = x.view(-1, 256, self.output_shape[1] // 8, self.output_shape[2] // 8)
+        x = self.deconvs(x)
+        return x
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
+
+    def get_base_size(self, output_shape):
+        return 256 * (output_shape[1] // 8) * (output_shape[2] // 8)
+         
 
 class AEModel(nn.Module):
     def __init__(self, variational, latent_size, input_shape = (3, 32, 32)):

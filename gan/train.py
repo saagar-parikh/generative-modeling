@@ -106,7 +106,7 @@ def train_model(
                 # 3. Compute the discriminator output on the generated data.
                 ##################################################################
                 discrim_real = disc(train_batch)
-                z = torch.randn(batch_size, 128).cuda()
+                z = torch.randn(train_batch.shape[0], 128).cuda()
                 fake_batch = gen.forward_given_samples(z)
                 discrim_fake = disc(fake_batch)
                 ##################################################################
@@ -117,8 +117,10 @@ def train_model(
                 # TODO 1.5 Compute the interpolated batch and run the
                 # discriminator on it.
                 ###################################################################
-                interp = None
-                discrim_interp = None
+                interp = torch.rand(train_batch.shape[0], 1, 1, 1).cuda()
+                # print(interp.shape, train_batch.shape, fake_batch.shape)
+                interp = interp * train_batch + (1 - interp) * fake_batch
+                discrim_interp = disc(interp)
                 ##################################################################
                 #                          END OF YOUR CODE                      #
                 ##################################################################

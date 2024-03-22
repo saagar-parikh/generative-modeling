@@ -44,9 +44,8 @@ def interpolate_latent_space(gen, path):
     z = torch.zeros(100, 128)
     z[:, 0] = torch.linspace(-1, 1, 10).repeat(10)
     z[:, 1] = torch.linspace(-1, 1, 10).repeat(10, 1).t().reshape(-1)
-    z = z.cuda()
-    gen_samples = gen.forward_given_samples(z)
-    torchvision.utils.save_image(gen_samples, path, nrow=5, normalize=True)
+    gen_samples = gen.forward_given_samples(z.cuda())
+    torchvision.utils.save_image(gen_samples, path, nrow=10, normalize=True)
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################

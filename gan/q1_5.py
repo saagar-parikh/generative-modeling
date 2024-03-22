@@ -25,8 +25,9 @@ def compute_discriminator_loss(
                                grad_outputs=torch.ones(discrim_interp.size()).cuda(),
                                create_graph=True, retain_graph=True)[0]
     grads = grads.view(grads.size(0), -1)
-    grad = torch.mean(((grads.norm(2, dim=1) - 1) ** 2))
-    loss_pt2 = lamb * grad
+    # grad = torch.mean(((grads.norm(2, dim=1) - 1) ** 2))
+    grads_mean = ((grads.norm(2, dim=1) - 1) ** 2).mean()
+    loss_pt2 = lamb * grads_mean
     loss = loss_pt1 + loss_pt2
     ##################################################################
     #                          END OF YOUR CODE                      #
